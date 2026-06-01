@@ -101,6 +101,12 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     product = db.get(Product, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    order_count = db.query(OrderItem).filter(OrderItem.product_id == product_id).count()
+    if order_count:
+        raise HTTPException(
+            status_code=400,
+            detail="This product is used in existing orders. Cancel those orders before deleting it.",
+        )
     db.delete(product)
     db.commit()
     return None
@@ -137,6 +143,12 @@ def delete_customer(customer_id: int, db: Session = Depends(get_db)):
     customer = db.get(Customer, customer_id)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
+    order_count = db.query(Order).filter(Order.customer_id == customer_id).count()
+    if order_count:
+        raise HTTPException(
+            status_code=400,
+            detail="This customer has existing orders. Cancel those orders before deleting the customer.",
+        )
     db.delete(customer)
     db.commit()
     return None
